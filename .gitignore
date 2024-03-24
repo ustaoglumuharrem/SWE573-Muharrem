@@ -1,0 +1,15 @@
+# Ignore Django migration files
+*.pyc
+__pycache__/
+db.sqlite3
+
+# Ignore environment-specific settings
+.env
+
+# Ignore IDE and editor files
+.vscode/
+.idea/
+
+# Ignore system-specific files
+*.DS_Store
+Thumbs.db
