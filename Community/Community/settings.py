@@ -32,19 +32,19 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'User',
-    'Role',
-    'UserRole',
     'Notification',
     'Communityy',
     'CommunityTemplate',
     'Post',
     'Comment',
+    'UserCommunityy',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
