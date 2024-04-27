@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block content %}
+      
+    <h1>Communities</h1>
+    <br/>    
+        {% for community in community_list %}
+            <a href="{% url 'show-community' community.id %}">
+            {{community}}></a> <a href="{% url 'update-community' community.id %}">-Update</a> <br/>
+        {% endfor %}
+    
+{% endblock %}

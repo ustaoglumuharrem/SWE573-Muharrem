@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>Dynamic Form</h1>
+    <form method="post">
+        {% csrf_token %}
+        {% for field in template_data %}
+            <div>
+                <label for="{{ field.typename }}">{{ field.typename|capfirst }}:</label>
+                {% if field.typefield == "text" %}
+                    <input type="text" id="{{ field.typename }}" name="{{ field.typename }}">
+                {% elif field.typefield == "date" %}
+                    <input type="date" id="{{ field.typename }}" name="{{ field.typename }}">
+                {% elif field.typefield == "datetime" %}
+                    <input type="datetime-local" id="{{ field.typename }}" name="{{ field.typename }}">
+                {% elif field.typefield == "email" %}
+                    <input type="email" id="{{ field.typename }}" name="{{ field.typename }}">
+                {% elif field.typefield == "number" %}
+                    <input type="number" id="{{ field.typename }}" name="{{ field.typename }}">
+                {% elif field.typefield == "time" %}
+                    <input type="time" id="{{ field.typename }}" name="{{ field.typename }}">
+                {% elif field.typefield == "url" %}
+                    <input type="url" id="{{ field.typename }}" name="{{ field.typename }}">
+                {% elif field.typefield == "file" %}
+                    <input type="file" id="{{ field.typename }}" name="{{ field.typename }}">
+                {% elif field.typefield == "image" %}
+                    <input type="image" id="{{ field.typename }}" name="{{ field.typename }}">
+                {% endif %}
+            </div>
+        {% endfor %}
+        <button type="submit">Submit</button>
+    </form>
+{% endblock %}
