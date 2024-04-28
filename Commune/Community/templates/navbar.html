@@ -21,8 +21,14 @@
         </li>
 
         <li class="nav-item">
+          <a class="nav-link" href="{% url 'show-userprofile' %}">Profile</a>
+        </li>
+
+        <li class="nav-item">
           <a class="nav-link" href="{% url 'logout' %}">Logout</a>
         </li>
+
+        
 
         {% else %}
         <li class="nav-item">
@@ -32,6 +38,8 @@
         <li class="nav-item">
           <a class="nav-link" href="{% url 'register_user' %}">Register</a>
         </li>
+
+        
         
        
 

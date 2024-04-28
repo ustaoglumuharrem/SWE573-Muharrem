@@ -4,11 +4,59 @@ from .models import Community
 from .models import Post
 from .models import Comment
 from .models import CommunityTemplate
+from .models import UserProfile
 from .forms import CommunityForm
 from .forms import PostForm
+from .forms import UserProfileForm
 from .models import Membership
 import json
 
+
+def add_userprofile(request):
+    submitted =False
+    if request.method == "POST":
+        form = UserProfileForm(request.POST, request.FILES)
+        if form.is_valid():
+            userprofile=UserProfile(
+                nickname=form.cleaned_data['nickname'],
+                about=form.cleaned_data['about'],
+                title=form.cleaned_data['title'],
+                photo=form.cleaned_data['photo'],
+                user=request.user
+            )
+            userprofile.save()
+            return HttpResponseRedirect('?submitted=True')
+    else:
+        form = UserProfileForm()
+        if 'submitted' in request.GET:
+                submitted =True
+    return render(request,'add_userprofile.html',{ 'form': form, 'submitted':submitted})
+
+
+
+def show_userprofile(request):
+    try:
+        # Attempt to retrieve the UserProfile for the currently logged-in user.
+        profile = UserProfile.objects.get(user_id=request.user.id)
+    except UserProfile.DoesNotExist:
+        # Redirect to add-userprofile page or show a link to create a profile.
+        return redirect('add-userprofile')
+    
+    # Initialize the form either with form data (POST) or with instance data (GET).
+    
+    form = UserProfileForm(request.POST or None,request.FILES or None , instance=profile)
+    
+    if request.method == 'POST':
+        # Check if the form is valid on submitting.
+        if form.is_valid():
+            form.save()
+            # You might want to redirect to a confirmation page or the same page to show updated data
+            return redirect('show-userprofile')  # Assuming 'profile-success' is a valid URL name
+
+    # If GET request or form is not valid, render the same page with the form.
+    
+    return render(request, 'show_userprofile.html', {'form': form, 'profile': profile})
+    
 
 
 def add_post(request,template_id):
@@ -26,6 +74,10 @@ def add_post(request,template_id):
         if 'submitted' in request.GET:
                 submitted =True
     return render(request,'add_post.html',{'form':form, 'submitted':submitted,'template':template.template['template']})
+
+
+
+
 
 def template_view(request):
     community_template=CommunityTemplate.objects.get(id=1)

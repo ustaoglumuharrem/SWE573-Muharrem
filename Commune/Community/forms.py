@@ -17,7 +17,8 @@ class CommunityForm(ModelForm):
 class UserProfileForm(ModelForm):
     class Meta:
         model = UserProfile
-        fields = ['user', 'nickname', 'about', 'title', 'photo']
+        fields = ['nickname', 'about', 'title', 'photo']
+        
 class MembershipForm(ModelForm):
     class Meta:
         model = Membership

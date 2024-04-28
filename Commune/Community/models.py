@@ -8,7 +8,7 @@ class UserProfile(models.Model):
     nickname = models.CharField(max_length=100, blank=True, null=True)
     about = models.TextField("About", blank=True, null=True)
     title = models.CharField("Title/Profession", max_length=100, blank=True, null=True)
-    photo = models.ImageField(upload_to='images/', null=True, blank=True)
+    photo = models.ImageField(upload_to="images/", null=True, blank=True)
 
     def __str__(self):
         return self.user.username
