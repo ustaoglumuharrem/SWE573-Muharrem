@@ -28,6 +28,8 @@ class Community(models.Model):
 
     def __str__(self):
         return self.name
+    def is_member(self, user):
+        return self.members.filter(id=user.id).exists()
     
 class Membership(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -49,7 +51,7 @@ class CommunityTemplate(models.Model):
 class Post(models.Model):
     title = models.CharField(max_length=255)
     community = models.ForeignKey(Community,blank=True, null=True, on_delete=models.CASCADE)
-    content = models.JSONField()
+    content = models.JSONField(default=dict)
     upvote = models.IntegerField(default=0)
     downvote = models.IntegerField(default=0)
     template = models.ForeignKey(CommunityTemplate, blank=True, null=True, on_delete=models.CASCADE)
@@ -85,3 +87,4 @@ class Notification(models.Model):
 
     def __str__(self):
         return self.title
+    

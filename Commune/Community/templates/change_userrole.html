@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    <h1>User Management</h1>
+    <br/>
+
+        {% for item in user_community_roles %}
+        <li>
+
+            {% if item.user_id != user.id %}
+                <strong>{{item.user}}</strong>
+                <strong>{{item.role}}</strong>
+
+                {% if item.role_id == 1 %}
+                    <a href="{% url 'assign_user_role' item.user_id item.community.id 2 %}">-Make Moderator</a>
+                    <a href="{% url 'assign_user_role' item.user_id item.community.id 3 %}">-Make Member</a>
+                    <a href="{% url 'remove_user_from_community' item.user_id item.community.id %}">-Kick</a>
+
+                {% endif %}
+                {% if item.role_id == 2 %}
+                    <a href="{% url 'assign_user_role' item.user_id item.community.id 1 %}">-Make Owner</a>
+                    <a href="{% url 'assign_user_role' item.user_id item.community.id 3 %}">-Make Member</a>
+                    <a href="{% url 'remove_user_from_community' item.user_id item.community.id %}">-Kick</a>
+
+                {% endif %}
+
+                {% if item.role_id == 3 %}
+                    <a href="{% url 'assign_user_role' item.user_id item.community.id 1 %}">-Make Owner</a>
+                    <a href="{% url 'assign_user_role' item.user_id item.community.id 2 %}">-Make Moderator</a>
+                    <a href="{% url 'remove_user_from_community' item.user_id item.community.id %}">-Kick</a>
+
+                {% endif %}
+
+            {% endif %}
+  
+
+
+             
+
+
+        </li>
+
+
+        {% endfor %}
+
+
+
+
+
+
+      
+{% endblock %}
