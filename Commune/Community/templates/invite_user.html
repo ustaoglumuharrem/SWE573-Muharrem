@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    <h1>Invite User</h1>
+    <br/>
+
+        {% for item in users_not_community %}
+        <li>
+            {% if item.id != user.id %}
+                <strong>{{item.username}}</strong> <a href="{% url 'send_invitation' item.id community_id %}">-Invite</a>
+
+            {%endif%}
+
+        </li>
+
+
+        {% endfor %}
+    
+{% endblock %}

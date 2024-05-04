@@ -4,6 +4,7 @@ from .models import Community
 from .models import Post
 from .models import Comment
 from .models import CommunityTemplate
+from .models import Notification
 from .models import UserProfile
 from .forms import CommunityForm
 from .forms import PostForm
@@ -14,6 +15,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.urls import reverse
 from .forms import generate_form
+from django.contrib.auth.models import User
+
 
 
 def add_userprofile(request):
@@ -266,3 +269,61 @@ def assign_user_role(request,user_id,community_id,role_id):
      member.role_id=role_id
      member.save()
      return redirect('list-communities')  # Using 'redirect' shortcut here
+
+def invite_user(request,community_id):
+    users=User.objects.all()
+    community_users=Membership.objects.filter(community_id=community_id)
+    users_not_community = []
+    
+    # Iterate over all communities
+    for user in users:
+        # Initialize with no role
+        # user_role_in_community = None
+
+        
+        # Check if the current user has a role in the community
+        for community_user in community_users:
+            is_exist=False
+            if user.id == community_user.user_id:
+                is_exist=True
+                
+
+        if not is_exist:
+            users_not_community.append(user)
+ 
+        # Create a new dictionary with the combined data
+        
+    return render(request, 'invite_user.html', {"users_not_community": users_not_community,"community_id":community_id})
+
+def send_invitation(request,user_id,community_id):
+    community = Community.objects.get(id=community_id)
+    
+    Notification.objects.create(
+        title="Invitation",
+        message=community.name,
+        user_id=user_id,
+        status=False 
+
+    )
+    return redirect('list-communities')  # Using 'redirect' shortcut here
+
+def show_notification(request):
+    notifications = Notification.objects.filter(user_id=request.user.id,status=False)
+    return render(request,'show_notification.html',{'notifications':notifications})
+
+
+def approve_or_reject_notification(request,notification_id,community_name, answer):
+    community = Community.objects.get(name=community_name)
+    notification =Notification.objects.get(id=notification_id)
+    notification.status=True
+    notification.save()
+    if answer:
+        assign_role(request.user.id,community.id,3)
+
+    return redirect('show_notification')  # Using 'redirect' shortcut here
+
+
+
+
+
+
