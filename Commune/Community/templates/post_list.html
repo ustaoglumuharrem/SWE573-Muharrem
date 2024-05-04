@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1>Posts</h1>
+<ul>
+    {% for post in posts %}
+    <li>
+        <h2>Title: {{ post.title }}</h2>
+        <p>Description: {{ post.description }}</p>
+        <!-- Displaying additional content from JSON -->
+        <div>
+        {{post.content}}
+        <h3>Additional Details:</h3>
+        {% for key, item in post.content.items %}
+            <!-- Check each key individually -->
+            {{key}}
+            {% if key != 'title' and key != 'description' %}
+                <p><strong>{{ key }}:</strong>
+                {% if item.type == 'image' %}
+                    <img src="{{ MEDIA_URL }}{{ item.value }}" alt="Image for {{ post.title }}">
+                {% elif item.type == 'email' %}
+                    <a href="mailto:{{ item.value }}">{{ item.value }}</a>
+                {% elif item.type == 'file' %} <!-- Assuming type 'file' should be handled as an image -->
+                    <img src="{{ MEDIA_URL }}{{ item.value }}" alt="File for {{ item.value }}">
+                {% else %}
+                    {{ item.value }}
+                {% endif %}
+                </p>
+            {% endif %}
+        {% endfor %}
+        </div>
+        <hr>
+    </li>
+    {% endfor %}
+</ul>
+
+    
+    
+{% endblock %}
+
+

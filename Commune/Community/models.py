@@ -50,6 +50,7 @@ class CommunityTemplate(models.Model):
     
 class Post(models.Model):
     title = models.CharField(max_length=255)
+    description = models.TextField(null=True) 
     community = models.ForeignKey(Community,blank=True, null=True, on_delete=models.CASCADE)
     content = models.JSONField(default=dict)
     upvote = models.IntegerField(default=0)

@@ -41,42 +41,30 @@ class NotificationForm(ModelForm):
         model = Notification
         fields = ['user', 'title', 'message', 'status']
 
-def generate_form(template_json):
+
+def generate_form(template_json_str):
+    template_json = json.loads(template_json_str)
     class DynamicForm(forms.Form):
-        pass  # Start with an empty form class
+        title = forms.CharField(label='Title', required=False, max_length=256)
+        description = forms.CharField(widget=forms.Textarea, label='Description', required=False)
+        
+        for field in template_json.get('template', []):
+            field_name = field.get('typename')
+            field_type = field.get('typefield')
+            
+            if field_name and field_type:
+                field_label = field_name.capitalize()
+                if field_type == 'text':
+                    locals()[field_name] = forms.CharField(label=field_label)
+                elif field_type == 'image':
+                    locals()[field_name] = forms.ImageField(label=field_label)
+                elif field_type == 'location':
+                    locals()[field_name] = forms.CharField(widget=forms.TextInput(attrs={'placeholder': 'Enter location'}), label=field_label)
+                elif field_type == 'email':
+                    locals()[field_name] = forms.EmailField(label=field_label)
+                elif field_type == 'date':
+                    locals()[field_name] = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), label=field_label)
+                elif field_type == 'number':
+                    locals()[field_name] = forms.DecimalField(label=field_label)
 
-    # Extract the fields from the template JSON
-    # fields = template_json.get('template', [])
-
-    for field in template_json:
-        if not isinstance(field, dict):
-            continue  # Ensure each field is represented as a dictionary
-
-        field_name = field.get('typename')
-        field_type = field.get('typefield')
-
-        # Debug: Print each field's details
-        print(f"1Processing field: Name={field_name}, Type={field_type}")
-
-        if field_name and field_type:
-            # Determine the form field type based on the 'typefield'
-            if field_type == 'text':
-                field_class = forms.CharField(label=field_name.capitalize())
-            elif field_type == 'image':
-                field_class = forms.ImageField(label=field_name.capitalize())
-            elif field_type == 'location':
-                # Example: Use a text input for location; customize as needed
-                field_class = forms.CharField(widget=forms.TextInput(attrs={'placeholder': 'Enter location'}), label=field_name.capitalize())
-            else:
-                print(f"Unsupported field type: {field_type}")
-                continue
-
-            # Add the field to the form
-            setattr(DynamicForm, field_name, field_class)
-            print(f"Field added: {field_name} of type {field_type}")
-
-    # Debug: List all fields added to the form class
-    print(f"Form fields added: {list(DynamicForm.base_fields)}")
-    
     return DynamicForm
-

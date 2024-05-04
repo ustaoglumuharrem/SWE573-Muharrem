@@ -16,8 +16,9 @@ from django.contrib import messages
 from django.urls import reverse
 from .forms import generate_form
 from django.contrib.auth.models import User
-
-
+import datetime  # Import the datetime module
+from decimal import Decimal
+from django.core.files.storage import default_storage
 
 def add_userprofile(request):
     submitted =False
@@ -63,75 +64,77 @@ def show_userprofile(request):
     # If GET request or form is not valid, render the same page with the form.
     
     return render(request, 'show_userprofile.html', {'form': form, 'profile': profile})
-    
+
+def show_posts(request,community_id):
+    posts = Post.objects.filter(community_id=community_id)  # Fetch all posts
+    for post in posts:
+        # Check if post.content is a string and convert it to a dictionary
+        if isinstance(post.content, str):
+            post.content = json.loads(post.content)
+    return render(request, 'post_list.html', {'posts': posts})
+
 
 
 def add_post(request, template_id):
     template = CommunityTemplate.objects.get(pk=template_id)
-    template_data = json.loads(template.template)
-    FormClass = generate_form(template_data)
-    print("Form fields to render:", FormClass)  # Debugging the form fields
+    FormClass = generate_form(template.template)
 
     form = FormClass(request.POST or None, request.FILES or None)
-
     if request.method == 'POST' and form.is_valid():
-        print("dadadasdasadss")  # Debugging the form fields
+        # Convert fields to appropriate formats before saving
+        cleaned_data = {}
+        field_types = json.loads(template.template).get('template', [])
+        type_mapping = {field['typename']: field['typefield'] for field in field_types}
 
+        for key, value in form.cleaned_data.items():
+            field_type = type_mapping.get(key)
+            if isinstance(value, datetime.date):
+                # Convert date to ISO format and store with type
+                cleaned_data[key] = {'value': value.isoformat(), 'type': field_type}
+            elif isinstance(value, Decimal):
+                # Convert decimal to string to preserve precision and store with type
+                cleaned_data[key] = {'value': str(value), 'type': field_type}
+            elif hasattr(value, 'read'):  # Check if the field is a file upload
+                # Save file and store the file path instead
+                file_path = default_storage.save(value.name, value)
+                cleaned_data[key] = {'value': file_path, 'type': 'file'}
+            else:
+                # Store other types as is
+                cleaned_data[key] = {'value': value, 'type': field_type}
+        
         new_post = Post.objects.create(
-            community_template=template,
-            content=form.cleaned_data
+            title=cleaned_data.get('title', {}).get('value', ''),
+            description=cleaned_data.get('description', {}).get('value', ''),
+            template_id=template.id,
+            content=json.dumps(cleaned_data),  # Serialize the dictionary with types and values
+            user_id=request.user.id,
+            community_id=template.community_id
         )
         return redirect('list-communities')
-    
-    print("Form fields to render:", form.fields)  # Debugging the form fields
-    return render(request, 'add_post.html', {'form': form,'template_data':template_data,'template':template})
 
-# def add_post(request, template_id):
-#     template = get_object_or_404(CommunityTemplate, id=template_id)
-#     submitted = False
-#     print(template)
-#     print(submitted)
-#     if request.method == "POST":
-#         form = PostForm(request.POST, request.FILES)  # Include request.FILES for handling file uploads
-#         if form.is_valid():
-#             new_post = form.save(commit=False)
+    return render(request, 'add_post.html', {'form': form, 'template': template})
 
-#             # Create a dictionary from the POST data relevant to the template
-#             content_data = {}
-#             for field in template.template['template']:
-#                 field_name = field['typename']
-#                 if field['typefield'] in ['file', 'image']:  # Check if the field is a file or image
-#                     file_item = request.FILES.get(field_name)
-#                     if file_item:
-#                         # Process file saving or handling logic here
-#                         # For demonstration, just use the file name, but usually, you would save the file
-#                         content_data[field_name] = file_item.name
-#                 else:
-#                     content_data[field_name] = request.POST.get(field_name, '')
+def create_template(request):
+    if request.method == 'POST':
+        # Fetch lists of typename and typefield from POST data
+        typenames = request.POST.getlist('typename[]')
+        typefields = request.POST.getlist('typefield[]')
 
-#             # Convert dictionary to JSON
-#             json_string = json.dumps(content_data)
-#             print(json_string)  # Debugging: Print JSON string to console
-            
-#             new_post.content = json_string
-#             new_post.template = template
-#             new_post.user = request.user  # Assuming the user is logged in
-#             new_post.save()
-            
-#             return HttpResponseRedirect('?submitted=True')
+        # Create a list of dictionaries for each typename and typefield pair
+        template_list = [{'typename': tn, 'typefield': tf} for tn, tf in zip(typenames, typefields)]
 
-#     else:
-#         form = PostForm()
-#         if 'submitted' in request.GET:
-#             submitted = True
+        # Structure the final JSON to include a "template" key
+        template_json = json.dumps({'template': template_list})
 
-#     context = {
-#         'form': form,
-#         'submitted': submitted,
-#         'template': template.template['template']
-#     }
-#     return render(request, 'add_post.html', context)
+        # Create a new template instance and save it
+        new_template = CommunityTemplate(name="Custom Template", template=template_json, community_id=1)
+        new_template.save()
 
+        # Redirect to another URL (list-communities)
+        return redirect('list-communities')
+
+    # Render the form template if not POST request
+    return render(request, 'create_template.html')
 
 
 

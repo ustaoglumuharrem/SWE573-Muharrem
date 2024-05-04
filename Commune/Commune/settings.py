@@ -47,6 +47,8 @@ CORS_ORIGIN_WHITELIST = (
     'http://localhost:3000',  # Add your React app's URL here
 )
 
+
+
 ROOT_URLCONF = 'Commune.urls'
 
 TEMPLATES = [
@@ -60,6 +62,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.media',
             ],
         },
     },

@@ -6,7 +6,8 @@
     {% for item in communities_with_roles %}
 
         {% if item.community.type == False %}
-            <a href="{% url 'show-community' item.community.id %}">{{ item.community }}</a> 
+            <a href="{% url 'show-community' item.community.id %}">{{ item.community }}</a>
+            <a href="{% url 'show_posts' item.community.id %}">-View Post</a> 
 
             {% if item.owner  or item.member  or item.moderator %}
   
@@ -15,6 +16,7 @@
                     <a href="{% url 'update-community' item.community.id %}">-Update</a> 
                     <a href="{% url 'all_communities_user' item.community.id %}">-User Management</a>
                     <a href="{% url 'invite_user' item.community.id %}">-Invite User</a> 
+                    <a href="{% url 'create_template' %}">-Create Template</a> 
                 {% endif %}
 
                 {% if item.moderator  or item.member  %}

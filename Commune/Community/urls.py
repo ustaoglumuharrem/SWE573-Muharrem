@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
-
+from django.conf import settings
+from django.conf.urls.static import static
 urlpatterns = [
 
     path('',views.home,name="home"),
@@ -22,7 +23,8 @@ urlpatterns = [
     path('invite_user/<community_id>',views.invite_user,name="invite_user"),
     path('send_invitation/<user_id>/<community_id>',views.send_invitation,name="send_invitation"),
     path('approve_or_reject_notification/<notification_id>/<community_name>/<answer>',views.approve_or_reject_notification,name="approve_or_reject_notification"),
-
+    path('show_posts/<community_id>',views.show_posts,name="show_posts"),  
+    path('create_template',views.create_template,name="create_template"),
 ]
 
 
