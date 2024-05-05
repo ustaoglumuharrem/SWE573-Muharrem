@@ -25,6 +25,18 @@ urlpatterns = [
     path('approve_or_reject_notification/<notification_id>/<community_name>/<answer>',views.approve_or_reject_notification,name="approve_or_reject_notification"),
     path('show_posts/<community_id>',views.show_posts,name="show_posts"),  
     path('create_template',views.create_template,name="create_template"),
+
+    path('upvote_post/<post_id>/<community_id>',views.upvote_post,name="upvote_post"),
+    path('downvote_post/<post_id>/<community_id>',views.downvote_post,name="downvote_post"),
+
+    path('upvote_comment/<comment_id>/<post_id>',views.upvote_comment,name="upvote_comment"),
+    path('downvote_comment/<comment_id>/<post_id>',views.downvote_comment,name="downvote_comment"),
+
+    path('add_comment/<post_id>/<community_id>',views.downvote_post,name="add_comment"),
+    path('post_detail/<post_id>',views.post_detail,name="post_detail"),
+    path('comments_edit/<comment_id>/', views.edit_comment, name='comments_edit'),
+    path('edit_post/<post_id>/', views.edit_post, name='edit_post'),
+
 ]
 
 

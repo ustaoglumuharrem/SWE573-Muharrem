@@ -28,10 +28,10 @@ class PostForm(ModelForm):
     class Meta:
         model = Post
         fields = ['title', 'content', 'community']
-class CommentForm(ModelForm):
-    class Meta:
-        model = Comment
-        fields = ['post', 'comment', 'upvote', 'downvote', 'isDeleted', 'updated', 'user']
+
+class CommentForm(forms.Form):
+    comment = forms.CharField(widget=forms.Textarea(attrs={'rows': 4, 'cols': 40}), label='Leave a comment')
+
 class CommunityTemplateForm(ModelForm):
     class Meta:
         model = CommunityTemplate
@@ -41,30 +41,69 @@ class NotificationForm(ModelForm):
         model = Notification
         fields = ['user', 'title', 'message', 'status']
 
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ['comment']
+
+class PostForm(forms.ModelForm):
+    class Meta:
+        model = Post
+        fields = ['title', 'description', 'content']  # Adjust fields based on your Post model
+
+import json
+from django import forms
 
 def generate_form(template_json_str):
     template_json = json.loads(template_json_str)
     class DynamicForm(forms.Form):
         title = forms.CharField(label='Title', required=False, max_length=256)
         description = forms.CharField(widget=forms.Textarea, label='Description', required=False)
-        
+
+        # Initialize latitude and longitude as None
+        latitude = None
+        longitude = None
+
         for field in template_json.get('template', []):
             field_name = field.get('typename')
             field_type = field.get('typefield')
-            
-            if field_name and field_type:
-                field_label = field_name.capitalize()
-                if field_type == 'text':
-                    locals()[field_name] = forms.CharField(label=field_label)
-                elif field_type == 'image':
-                    locals()[field_name] = forms.ImageField(label=field_label)
-                elif field_type == 'location':
-                    locals()[field_name] = forms.CharField(widget=forms.TextInput(attrs={'placeholder': 'Enter location'}), label=field_label)
-                elif field_type == 'email':
-                    locals()[field_name] = forms.EmailField(label=field_label)
-                elif field_type == 'date':
-                    locals()[field_name] = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), label=field_label)
-                elif field_type == 'number':
-                    locals()[field_name] = forms.DecimalField(label=field_label)
+            field_label = field_name.capitalize()
+
+            # Create fields based on type
+            if field_type == 'text':
+                locals()[field_name] = forms.CharField(label=field_label)
+            elif field_type == 'image':
+                locals()[field_name] = forms.ImageField(label=field_label)
+            elif field_type == 'email':
+                locals()[field_name] = forms.EmailField(label=field_label)
+            elif field_type == 'date':
+                locals()[field_name] = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), label=field_label)
+            elif field_type == 'number':
+                locals()[field_name] = forms.DecimalField(label=field_label)
+            elif field_type == 'location':
+                # Add latitude and longitude fields only if 'location' type is specified
+                locals()['latitude'] = forms.FloatField(widget=forms.HiddenInput(), required=False)
+                locals()['longitude'] = forms.FloatField(widget=forms.HiddenInput(), required=False)
 
     return DynamicForm
+
+
+
+class GeoLocationWidget(forms.MultiWidget):
+    def __init__(self, attrs=None):
+        widgets = [
+            forms.NumberInput(attrs={'placeholder': 'Latitude', 'step': '0.000001'}),
+            forms.NumberInput(attrs={'placeholder': 'Longitude', 'step': '0.000001'}),
+        ]
+        super().__init__(widgets, attrs)
+
+    def decompress(self, value):
+        if value:
+            return value.split(',')
+        return [None, None]
+
+    def value_from_datadict(self, data, files, name):
+        lat = data.get(name + '_0', None)
+        lng = data.get(name + '_1', None)
+        return ','.join([lat, lng]) if lat and lng else None
+

@@ -7,7 +7,7 @@ from .models import CommunityTemplate
 from .models import Notification
 from .models import UserProfile
 from .forms import CommunityForm
-from .forms import PostForm
+from .forms import CommentForm
 from .forms import UserProfileForm
 from .models import Membership
 import json
@@ -15,6 +15,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.urls import reverse
 from .forms import generate_form
+from .forms import PostForm
 from django.contrib.auth.models import User
 import datetime  # Import the datetime module
 from decimal import Decimal
@@ -74,6 +75,99 @@ def show_posts(request,community_id):
     return render(request, 'post_list.html', {'posts': posts})
 
 
+def post_detail(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    comments = Comment.objects.filter(post_id=post.id)
+    if isinstance(post.content, str):
+        post.content = json.loads(post.content)
+
+    # Instantiate a new comment form
+    comment_form = CommentForm(request.POST or None)
+
+    if request.method == 'POST':
+        if comment_form.is_valid():
+            Comment.objects.create(
+                comment=comment_form.cleaned_data['comment'],
+                post=post,
+                user=request.user
+                
+            )
+            return redirect(request.path_info)  # Refresh the page to display the new comment
+
+    return render(request, 'post_comments_list.html', {
+        'post': post,
+        'comments': comments,
+        'comment_form': comment_form
+    })
+
+def upvote_comment(request, comment_id,post_id):
+    comment = get_object_or_404(Comment, id=comment_id)
+    comment.upvote += 1
+    comment.save()
+    return redirect('post_detail', post_id=comment.post.id)  # Redirect back to the post containing the comment
+
+def downvote_comment(request, comment_id,post_id):
+    comment = get_object_or_404(Comment, id=comment_id)
+    comment.downvote += 1
+    comment.save()
+    return redirect('post_detail', post_id=comment.post.id)  # Redirect back to the post containing the comment
+
+def edit_comment(request, comment_id):
+    comment = get_object_or_404(Comment, id=comment_id)
+
+    # Check user permission to edit comment
+    if request.user != comment.user:
+        return redirect('post_detail', post_id=comment.post.id)  # Redirect or show an error
+
+    if request.method == 'POST':
+        form = CommentForm(request.POST, instance=comment)
+        if form.is_valid():
+            # Set the 'updated' field to True before saving
+            updated_comment = form.save(commit=False)
+            updated_comment.updated = True
+            updated_comment.save()
+            return redirect('post_detail', post_id=comment.post.id)
+    else:
+        form = CommentForm(instance=comment)
+
+    return render(request, 'edit_comment.html', {'form': form})
+
+def edit_post(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    template = CommunityTemplate.objects.get(pk=post.template_id)
+    FormClass = generate_form(template.template)
+
+    # Initialize the form with the post's existing content data
+    initial_data = json.loads(post.content)
+    form = FormClass(request.POST or None, request.FILES or None, initial=initial_data)
+
+    if request.method == 'POST' and form.is_valid():
+        # Similar logic as in add_post, but now we're updating an existing record
+        cleaned_data = {}
+        field_types = json.loads(template.template).get('template', [])
+        type_mapping = {field['typename']: field['typefield'] for field in field_types}
+
+        for key, value in form.cleaned_data.items():
+            field_type = type_mapping.get(key)
+            if isinstance(value, datetime.date):
+                cleaned_data[key] = {'value': value.isoformat(), 'type': field_type}
+            elif isinstance(value, Decimal):
+                cleaned_data[key] = {'value': str(value), 'type': field_type}
+            elif hasattr(value, 'read'):  # File upload
+                file_path = default_storage.save(value.name, value)
+                cleaned_data[key] = {'value': file_path, 'type': 'file'}
+            else:
+                cleaned_data[key] = {'value': value, 'type': field_type}
+
+        # Update post fields
+        post.title = cleaned_data.get('title', {}).get('value', post.title)
+        post.description = cleaned_data.get('description', {}).get('value', post.description)
+        post.content = json.dumps(cleaned_data)  # Serialize updated data
+        post.save()  # Save the updated post
+
+        return redirect('list-communities')  # Redirect or to the detail view of the post
+
+    return render(request, 'edit_post.html', {'form': form, 'post': post})
 
 def add_post(request, template_id):
     template = CommunityTemplate.objects.get(pk=template_id)
@@ -82,6 +176,8 @@ def add_post(request, template_id):
     form = FormClass(request.POST or None, request.FILES or None)
     if request.method == 'POST' and form.is_valid():
         # Convert fields to appropriate formats before saving
+        latitude = form.cleaned_data.get('latitude')
+        longitude = form.cleaned_data.get('longitude')
         cleaned_data = {}
         field_types = json.loads(template.template).get('template', [])
         type_mapping = {field['typename']: field['typefield'] for field in field_types}
@@ -136,6 +232,18 @@ def create_template(request):
     # Render the form template if not POST request
     return render(request, 'create_template.html')
 
+
+def upvote_post(request,post_id,community_id):
+    post=Post.objects.get(id=post_id)
+    post.upvote = post.upvote+1
+    post.save()
+    return redirect(reverse('show_posts', kwargs={'community_id': community_id}))
+
+def downvote_post(request,post_id,community_id):
+    post=Post.objects.get(id=post_id)
+    post.downvote = post.downvote+1
+    post.save()
+    return redirect(reverse('show_posts', kwargs={'community_id': community_id}))
 
 
 def template_view(request):

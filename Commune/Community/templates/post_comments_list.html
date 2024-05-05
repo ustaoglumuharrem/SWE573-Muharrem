@@ -3,13 +3,8 @@
 {% block content %}
 <h1>Posts</h1>
 <ul>
-    {% for post in posts %}
     <li>
-        <h2>
-            <a href="{% url 'post_detail' post.id %}">{{ post.content.title.value }}</a>
-            <!-- Edit link -->
-            <a href="{% url 'edit_post' post.id %}">(Edit)</a>
-        </h2>
+        <h2>{{ post.content.title.value }}</h2>
         <p>Description: {{ post.content.description.value }}</p>
         <div>
             <h3>Additional Details:</h3>
@@ -40,6 +35,44 @@
             </form>
         </div>
 
+
+        <h3>Comments</h3>
+        {% for comment in comments %}
+        <div>
+            <p>{{ comment.comment }}</p>
+            <p>
+                <small style="margin-right: 15px;">Posted by {{ comment.user }}</small>
+                <small style="margin-right: 15px;">Posted on {{ comment.createdDate|date:"Y-m-d H:i" }}</small>
+                {% if comment.updated %}
+                    <small>Updated Comment</small>
+                {% endif %}
+                {% if user.id == comment.user_id %}
+        <!-- Link to the comment edit page -->
+                <a href="{% url 'comments_edit' comment.id %}">Edit</a>
+                {% endif %}
+            </p>
+            <form action="{% url 'upvote_comment' comment.id post.id %}" method="post">
+                {% csrf_token %}
+                <button type="submit">Upvote</button>
+                <span>{{ comment.upvote }}</span>
+            </form>
+            <form action="{% url 'downvote_comment' comment.id post.id %}" method="post">
+                {% csrf_token %}
+                <button type="submit">Downvote</button>
+                <span>{{ comment.downvote }}</span>
+            </form>
+ 
+        </div>
+        {% empty %}
+        <p>No comments yet.</p>
+
+        {% endfor %}
+        <form method="post">
+            {% csrf_token %}
+            {{ comment_form.as_p }}
+            <button type="submit">Add Comment</button>
+        </form>
+
         {% if post.content.latitude.value and post.content.longitude.value %}
             <div id="map_{{ post.id }}" style="height: 250px;"></div>
             <script>
@@ -57,6 +90,6 @@
         {% endif %}
         <hr>
     </li>
-    {% endfor %}
+    
 </ul>
 {% endblock %}
