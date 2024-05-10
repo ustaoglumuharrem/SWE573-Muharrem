@@ -10,7 +10,7 @@
     <ul class="dropdown-menu">
         {% for template in community_templates %}
             <!-- Each dropdown item links to a page for the template; adjust the href as needed -->
-            <li><a class="dropdown-item" href="{% url 'add-post' template.id %}">Template ID: {{ template.name }}</a></li>
+            <li><a class="dropdown-item" href="{% url 'add-post' template.id %}">{{ template.name }}</a></li>
         {% endfor %}
     </ul>
   </div>

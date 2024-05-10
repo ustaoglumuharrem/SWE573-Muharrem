@@ -1,5 +1,20 @@
 {% extends 'base.html' %}
 
 {% block content %}
-      
+{%if notification %}
+<p>You have a notification</p>
+
+{%endif%}
+
+<h1>Top Communities by Members</h1>
+<ul>
+    {% for community in communities %}
+    <li>
+        {{ community.name }} - {{ community.members.count }} Members
+    </li>
+    {% empty %}
+    <li>No communities found.</li>
+    {% endfor %}
+</ul>
+
 {% endblock %}

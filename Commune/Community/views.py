@@ -1,5 +1,6 @@
 from django.shortcuts import render,redirect,get_object_or_404
 from django.http import HttpResponseRedirect
+from django.db import models
 from .models import Community
 from .models import Post
 from .models import Comment
@@ -20,7 +21,7 @@ from django.contrib.auth.models import User
 import datetime  # Import the datetime module
 from decimal import Decimal
 from django.core.files.storage import default_storage
-
+from django.db.models import Q
 def add_userprofile(request):
     submitted =False
     if request.method == "POST":
@@ -139,7 +140,10 @@ def edit_post(request, post_id):
 
     # Initialize the form with the post's existing content data
     initial_data = json.loads(post.content)
-    form = FormClass(request.POST or None, request.FILES or None, initial=initial_data)
+    # Extract just the values for form initialization
+    initial_values = {key: value['value'] for key, value in initial_data.items()}
+    form = FormClass(request.POST or None, request.FILES or None, initial=initial_values)
+
 
     if request.method == 'POST' and form.is_valid():
         # Similar logic as in add_post, but now we're updating an existing record
@@ -153,9 +157,15 @@ def edit_post(request, post_id):
                 cleaned_data[key] = {'value': value.isoformat(), 'type': field_type}
             elif isinstance(value, Decimal):
                 cleaned_data[key] = {'value': str(value), 'type': field_type}
-            elif hasattr(value, 'read'):  # File upload
+            elif hasattr(value, 'read'):  # Check if the field is a file upload
+                # Save file and categorize based on content type
                 file_path = default_storage.save(value.name, value)
-                cleaned_data[key] = {'value': file_path, 'type': 'file'}
+                if value.content_type.startswith('image/'):
+                    cleaned_data[key] = {'value': file_path, 'type': 'image'}
+                elif value.content_type.startswith('video/'):
+                    cleaned_data[key] = {'value': file_path, 'type': 'video'}
+                else:
+                    cleaned_data[key] = {'value': file_path, 'type': 'file'}
             else:
                 cleaned_data[key] = {'value': value, 'type': field_type}
 
@@ -168,6 +178,7 @@ def edit_post(request, post_id):
         return redirect('list-communities')  # Redirect or to the detail view of the post
 
     return render(request, 'edit_post.html', {'form': form, 'post': post})
+from django.core.files.uploadedfile import InMemoryUploadedFile
 
 def add_post(request, template_id):
     template = CommunityTemplate.objects.get(pk=template_id)
@@ -191,9 +202,14 @@ def add_post(request, template_id):
                 # Convert decimal to string to preserve precision and store with type
                 cleaned_data[key] = {'value': str(value), 'type': field_type}
             elif hasattr(value, 'read'):  # Check if the field is a file upload
-                # Save file and store the file path instead
+                # Save file and categorize based on content type
                 file_path = default_storage.save(value.name, value)
-                cleaned_data[key] = {'value': file_path, 'type': 'file'}
+                if value.content_type.startswith('image/'):
+                    cleaned_data[key] = {'value': file_path, 'type': 'image'}
+                elif value.content_type.startswith('video/'):
+                    cleaned_data[key] = {'value': file_path, 'type': 'video'}
+                else:
+                    cleaned_data[key] = {'value': file_path, 'type': 'file'}
             else:
                 # Store other types as is
                 cleaned_data[key] = {'value': value, 'type': field_type}
@@ -210,9 +226,12 @@ def add_post(request, template_id):
 
     return render(request, 'add_post.html', {'form': form, 'template': template})
 
-def create_template(request):
+
+
+def create_template(request,community_id):
     if request.method == 'POST':
         # Fetch lists of typename and typefield from POST data
+        template_name = request.POST.get('template_name', 'Default Template Name')
         typenames = request.POST.getlist('typename[]')
         typefields = request.POST.getlist('typefield[]')
 
@@ -223,14 +242,14 @@ def create_template(request):
         template_json = json.dumps({'template': template_list})
 
         # Create a new template instance and save it
-        new_template = CommunityTemplate(name="Custom Template", template=template_json, community_id=1)
+        new_template = CommunityTemplate(name=template_name, template=template_json, community_id=community_id)
         new_template.save()
 
         # Redirect to another URL (list-communities)
         return redirect('list-communities')
 
     # Render the form template if not POST request
-    return render(request, 'create_template.html')
+    return render(request, 'create_template.html',{'community_id': community_id})
 
 
 def upvote_post(request,post_id,community_id):
@@ -360,12 +379,15 @@ def remove_user_from_community(request, user_id, community_id):
     # Attempt to delete the membership
     membership = Membership.objects.get(user_id=user_id, community_id=community_id)
     membership.delete()
+    send_kick_notification(user_id,community_id)
     return redirect('list-communities')  # Using 'redirect' shortcut here
 
 
 def home(request):
     name1="Muharrem"
-    return render(request,'home.html',{"name":name1})
+    notification = Notification.objects.filter(user_id=request.user.id,status=False)
+    communities = Community.objects.annotate(member_count=models.Count('members')).order_by('-member_count')
+    return render(request, 'home.html', {'communities': communities,'notification':notification})
 
 
 def assign_role(user_id,community_id,role_id):
@@ -418,9 +440,41 @@ def send_invitation(request,user_id,community_id):
     )
     return redirect('list-communities')  # Using 'redirect' shortcut here
 
+
+def members_community(request,community_id):
+    user_community_members = Community.objects.get(id=community_id)
+    
+    # Create a list to hold the combined data
+   
+    return render(request, 'show_members.html', {"user_community_members": user_community_members})
+
+
+def send_kick_notification(user_id,community_id):
+    community = Community.objects.get(id=community_id)
+    
+    Notification.objects.create(
+        title="You kicked from",
+        message=community.name,
+        user_id=user_id,
+        status=False 
+
+    )
+    return redirect('list-communities')  # Using 'redirect' shortcut here
+
 def show_notification(request):
     notifications = Notification.objects.filter(user_id=request.user.id,status=False)
     return render(request,'show_notification.html',{'notifications':notifications})
+
+
+
+def search_posts(request):
+    query = request.GET.get('q', '')  # Get the query from URL parameter (q)
+    if query:
+        posts = Post.objects.filter(Q(title__icontains=query) | Q(description__icontains=query))
+    else:
+        posts = Post.objects.none()  # Return an empty queryset to avoid loading all posts unnecessarily
+
+    return render(request, 'search_results.html', {'posts': posts, 'query': query})
 
 
 def approve_or_reject_notification(request,notification_id,community_name, answer):

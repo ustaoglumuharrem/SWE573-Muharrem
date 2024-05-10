@@ -21,10 +21,11 @@ urlpatterns = [
     path('show_userprofile',views.show_userprofile,name="show-userprofile"),
     path('assign_user_role/<user_id>/<community_id>/<role_id>',views.assign_user_role,name="assign_user_role"),
     path('invite_user/<community_id>',views.invite_user,name="invite_user"),
+    path('members_community/<community_id>',views.members_community,name="members_community"),
     path('send_invitation/<user_id>/<community_id>',views.send_invitation,name="send_invitation"),
     path('approve_or_reject_notification/<notification_id>/<community_name>/<answer>',views.approve_or_reject_notification,name="approve_or_reject_notification"),
     path('show_posts/<community_id>',views.show_posts,name="show_posts"),  
-    path('create_template',views.create_template,name="create_template"),
+    path('create_template/<community_id>',views.create_template,name="create_template"),
 
     path('upvote_post/<post_id>/<community_id>',views.upvote_post,name="upvote_post"),
     path('downvote_post/<post_id>/<community_id>',views.downvote_post,name="downvote_post"),
@@ -36,7 +37,7 @@ urlpatterns = [
     path('post_detail/<post_id>',views.post_detail,name="post_detail"),
     path('comments_edit/<comment_id>/', views.edit_comment, name='comments_edit'),
     path('edit_post/<post_id>/', views.edit_post, name='edit_post'),
-
+    path('search_posts', views.search_posts, name='search_posts'),
 ]
 
 

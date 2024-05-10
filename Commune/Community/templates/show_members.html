@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{%if notification %}
+<p>You have a notification</p>
+
+{%endif%}
+
+<h1>Members of Community</h1>
+<ul>
+    {% for member in user_community_members.members %}
+    <li>
+        {{ member}} 
+    </li>
+    {% empty %}
+    <li>No community member found.</li>
+    {% endfor %}
+</ul>
+
+{% endblock %}

@@ -2,14 +2,19 @@
 
 {% block content %}
 
-    <h1>Invite User</h1>
+    <h1>Notifications</h1>
     <br/>
 
         {% for item in notifications %}
         <li>
-            {{item.id}}
+            {%if item.title == "Invitation"%}
 
             <strong>{{item.title}}</strong> <strong>{{item.message}}</strong> <a href="{% url 'approve_or_reject_notification' item.id item.message True %}">-Approve</a> <a href="{% url 'approve_or_reject_notification' item.id item.message False %}">-Reject</a> 
+            {% else %}
+            <strong>{{item.title}}</strong> <strong>{{item.message}}</strong>
+            
+            {%endif%}
+
 
 
             

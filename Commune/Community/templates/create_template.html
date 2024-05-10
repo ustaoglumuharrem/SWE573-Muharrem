@@ -1,8 +1,19 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Create Form Template</title>
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- Begin the section for creating a form template -->
+<h1>Create Form Template</h1>
+<form id="form-template" method="POST" action="{% url 'create_template' community_id %}">
+    {% csrf_token %}
+    <input type="text" name="template_name" placeholder="Template Name" required>
+    
+    <div id="fields-container">
+        <!-- Initial field components -->
+        <button type="button" onclick="addField()">Add Field</button>
+    </div>
+    <button type="submit">Save Template</button>
+</form>
+<!-- JavaScript for dynamically adding and removing fields -->
 <script>
 function addField() {
     const container = document.getElementById('fields-container');
@@ -16,6 +27,8 @@ function addField() {
             <option value="email">Email</option>
             <option value="image">Image</option>
             <option value="location">Location</option>
+            <option value="video">Video</option>
+            <option value="year">Year</option>
         </select>
         <button type="button" onclick="removeField(this)">Remove</button>
     `;
@@ -26,15 +39,4 @@ function removeField(button) {
     button.parentNode.remove();
 }
 </script>
-</head>
-<body>
-<form id="form-template" method="POST" action="create_template">
-    {% csrf_token %}
-    
-    <div id="fields-container">
-        <button type="button" onclick="addField()">Add Field</button>
-    </div>
-    <button type="submit">Save Template</button>
-</form>
-</body>
-</html>
+{% endblock %}

@@ -10,13 +10,14 @@
             <a href="{% url 'show_posts' item.community.id %}">-View Post</a> 
 
             {% if item.owner  or item.member  or item.moderator %}
+                <a href="{% url 'members_community' item.community.id %}">-Members</a> 
   
                 {% if item.owner  or item.moderator  %}
                 
                     <a href="{% url 'update-community' item.community.id %}">-Update</a> 
                     <a href="{% url 'all_communities_user' item.community.id %}">-User Management</a>
                     <a href="{% url 'invite_user' item.community.id %}">-Invite User</a> 
-                    <a href="{% url 'create_template' %}">-Create Template</a> 
+                    <a href="{% url 'create_template' item.community.id %}">-Create Template</a> {{ item.community.id }}
                 {% endif %}
 
                 {% if item.moderator  or item.member  %}

@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Search Results</h1>
+<form action="{% url 'search_posts' %}" method="GET">
+    <input type="text" name="q" value="{{ query }}" placeholder="Search posts...">
+    <button type="submit">Search</button>
+</form>
+
+{% if posts %}
+<ul>
+    {% for post in posts %}
+    {{post.id}}
+    {{post.title}}
+    {{post.description}}
+    <li>
+        <h2>
+            <a href="{% url 'post_detail' post.id %}">{{ post.title }}</a>
+            <!-- Edit link -->
+            <a href="{% url 'edit_post' post.id %}">(Edit)</a>
+        </h2>
+        <p>Description: {{ post.description }}</p>
+
+        {% if post.content.latitude.value and post.content.longitude.value %}
+            <div id="map_{{ post.id }}" style="height: 250px;"></div>
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    var latitude = parseFloat('{{ post.content.latitude.value }}');
+                    var longitude = parseFloat('{{ post.content.longitude.value }}');
+                    var map = L.map('map_{{ post.id }}').setView([latitude, longitude], 13);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors'
+                    }).addTo(map);
+                    L.marker([latitude, longitude]).addTo(map)
+                        .bindPopup('<b>{{ post.content.title.value }}</b>').openPopup();
+                });
+            </script>
+        {% endif %}
+        <hr>
+    </li>
+    {% endfor %}
+
+    
+</ul>
+{% else %}
+<p>No posts found matching your query.</p>
+{% endif %}
+
+{% endblock %}

@@ -53,7 +53,7 @@ class PostForm(forms.ModelForm):
 
 import json
 from django import forms
-
+import datetime
 def generate_form(template_json_str):
     template_json = json.loads(template_json_str)
     class DynamicForm(forms.Form):
@@ -79,11 +79,16 @@ def generate_form(template_json_str):
             elif field_type == 'date':
                 locals()[field_name] = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), label=field_label)
             elif field_type == 'number':
-                locals()[field_name] = forms.DecimalField(label=field_label)
+                locals()[field_name] = forms.DecimalField(label=field_label)   
+            elif field_type == 'video':
+                locals()[field_name] = forms.FileField(label=field_label)
+            elif field_type == 'year':
+                locals()[field_name] = forms.IntegerField(min_value=1900, max_value=datetime.date.today().year, label=field_label)
             elif field_type == 'location':
                 # Add latitude and longitude fields only if 'location' type is specified
                 locals()['latitude'] = forms.FloatField(widget=forms.HiddenInput(), required=False)
                 locals()['longitude'] = forms.FloatField(widget=forms.HiddenInput(), required=False)
+
 
     return DynamicForm
 

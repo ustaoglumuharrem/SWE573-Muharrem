@@ -8,7 +8,9 @@
         <h2>
             <a href="{% url 'post_detail' post.id %}">{{ post.content.title.value }}</a>
             <!-- Edit link -->
-            <a href="{% url 'edit_post' post.id %}">(Edit)</a>
+            {%if post.user_id == user.id %}
+                <a href="{% url 'edit_post' post.id %}">(Edit)</a>
+            {%endif%}
         </h2>
         <p>Description: {{ post.content.description.value }}</p>
         <div>
@@ -17,11 +19,21 @@
                 {% if key != 'title' and key != 'description' and key != 'latitude' and key != 'longitude' %}
                     <p><strong>{{ key }}:</strong>
                     {% if item.type == 'image' %}
-                        <img src="{{ MEDIA_URL }}{{ item.value }}" alt="Image related to {{ post.content.title.value }}">
-                    {% elif item.type == 'email' %}
+                        <img src="{{ MEDIA_URL }}{{ item.value }}" alt="Image related to {{ post.content.title.value }} width="320" height="240"">
+                        {% elif item.type == 'email' %}
                         <a href="mailto:{{ item.value }}">{{ item.value }}</a>
                     {% elif item.type == 'file' %}
-                        <img src="{{ MEDIA_URL }}{{ item.value }}" alt="File related to {{ item.value }}">
+                        <!-- Handle file types that are actually videos -->
+                        <video width="320" height="240" controls>
+                            <source src="{{ MEDIA_URL }}{{ item.value }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    {% elif item.type == 'video' %}
+                        <!-- Explicitly handle video files -->
+                        <video width="320" height="240" controls>
+                            <source src="{{ MEDIA_URL }}{{ item.value }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
                     {% else %}
                         {{ item.value }}
                     {% endif %}
@@ -30,6 +42,8 @@
             {% endfor %}
         </div>
         <div>
+            <small style="margin-right: 15px;">Posted by {{ post.user }}</small>
+            <small style="margin-right: 15px;">Posted on {{ post.createDate|date:"Y-m-d H:i" }}</small>
             <form action="{% url 'upvote_post' post.id post.community_id %}" method="post">
                 {% csrf_token %}
                 <button type="submit">Upvote</button>{{ post.upvote }}
