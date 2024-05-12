@@ -3,7 +3,9 @@
 {% block content %}
 <h1>Posts</h1>
 <ul>
+    
     {% for post in posts %}
+    <a href="{% url 'advanced_search_select' post.community_id %}">Advanced Search</a>
     <li>
         <h2>
             <a href="{% url 'post_detail' post.id %}">{{ post.content.title.value }}</a>

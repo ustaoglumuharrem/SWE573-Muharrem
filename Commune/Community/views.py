@@ -22,6 +22,8 @@ import datetime  # Import the datetime module
 from decimal import Decimal
 from django.core.files.storage import default_storage
 from django.db.models import Q
+from .forms import generate_dynamic_search_form
+# from datetime import datetime
 def add_userprofile(request):
     submitted =False
     if request.method == "POST":
@@ -251,6 +253,48 @@ def create_template(request,community_id):
     # Render the form template if not POST request
     return render(request, 'create_template.html',{'community_id': community_id})
 
+from django.core.serializers.json import DjangoJSONEncoder
+
+def advanced_search_posts(request, template_id):
+    template = get_object_or_404(CommunityTemplate, pk=template_id)
+    FormClass = generate_dynamic_search_form(template.template)
+    form = FormClass(request.GET or None)
+
+    if request.method == 'GET' and form.is_valid():
+        # Initialize the query with a template filter, if needed.
+        query = Post.objects.filter(template=template)
+        query.filter
+
+        for field, value in form.cleaned_data.items():
+            if value:
+                # Properly handle different data types
+                if 'date' in field and isinstance(value, str):
+                    try:
+                        # Convert string to date and then to string in ISO format for JSON compatibility
+                        value = datetime.datetime.strptime(value, '%Y-%m-%d').isoformat()
+                    except ValueError:
+                        continue  # Skip incorrect date formats.
+
+                # Build dynamic JSON field query
+                json_field_query = f"content__{field}__value__icontains"
+                query = query.filter(**{json_field_query: value})
+
+        # Evaluate the queryset to apply JSON and other filters
+        posts = list(query)
+
+        # Serialize post content to JSON string if needed and convert dates
+        for post in posts:
+            # Ensuring JSON serialization for complex data structures
+            if isinstance(post.content, dict):
+                post.content = json.dumps(post.content, cls=DjangoJSONEncoder)
+            if 'date' in post.content:
+                post.content['date'] = datetime.datetime.strptime(post.content['date'], '%Y-%m-%d').date().isoformat()
+
+        # Render the results
+        return render(request, 'advanced_search_results.html', {'form': form, 'posts': posts})
+
+    # Handle initial form rendering if the GET request is not valid or not submitted
+    return render(request, 'search_form.html', {'form': form, 'template_id': template_id})
 
 def upvote_post(request,post_id,community_id):
     post=Post.objects.get(id=post_id)
@@ -274,6 +318,11 @@ def template_get(request,community_id):
     community_templates=CommunityTemplate.objects.filter(community_id=community_id)
     # template_data = json.loads(community_template.template)  # Parse JSON to dict
     return render(request, 'select_template.html',  {'community_templates': community_templates})
+
+def template_advanced_get(request,community_id):
+    community_templates=CommunityTemplate.objects.filter(community_id=community_id)
+    # template_data = json.loads(community_template.template)  # Parse JSON to dict
+    return render(request, 'advanced_search_select_template.html',  {'community_templates': community_templates})
      
 
 def update_community(request,community_id):

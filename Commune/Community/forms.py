@@ -93,6 +93,40 @@ def generate_form(template_json_str):
     return DynamicForm
 
 
+def generate_dynamic_search_form(template_json_str):
+    template_json = json.loads(template_json_str)
+
+    class DynamicSearchForm(forms.Form):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            for field in template_json.get('template', []):
+                field_name = field.get('typename')
+                field_label = field.get('typename').capitalize()
+                field_type = field.get('typefield')
+
+                if field_type == 'text':
+                    self.fields[field_name] = forms.CharField(label=field_label, required=False)
+                elif field_type == 'number':
+                    self.fields[field_name] = forms.DecimalField(label=field_label, required=False)
+                # elif field_type == 'image':
+                #     self.fields[field_name] = forms.ImageField(label=field_label, required=False)
+                elif field_type == 'email':
+                    self.fields[field_name] = forms.EmailField(label=field_label, required=False)
+                elif field_type == 'date':
+                    self.fields[field_name] = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), label=field_label)
+                # elif field_type == 'video':
+                #     self.fields[field_name] = forms.FileField(label=field_label, required=False)
+                elif field_type == 'year':
+                    self.fields[field_name] = forms.IntegerField(
+                        label=field_label, 
+                        required=False, 
+                        min_value=1900, 
+                        max_value=datetime.date.today().year
+                    )
+                # Add other specific fields and conditions as necessary
+
+    return DynamicSearchForm
+
 
 class GeoLocationWidget(forms.MultiWidget):
     def __init__(self, attrs=None):

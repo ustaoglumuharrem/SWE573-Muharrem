@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+
+<div class="dropdown">
+    <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+      Select Template
+    </button>
+    <ul class="dropdown-menu">
+        {% for template in community_templates %}
+            <!-- Each dropdown item links to a page for the template; adjust the href as needed -->
+            <li><a class="dropdown-item" href="{% url 'advanced_search_posts' template.id %}">{{ template.name }}</a></li>
+        {% endfor %}
+    </ul>
+  </div>
+
+
+
+
+
+
+
+{% endblock %}

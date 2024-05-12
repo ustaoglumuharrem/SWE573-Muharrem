@@ -17,6 +17,7 @@ urlpatterns = [
     path('template',views.template_view,name="template"),
     path('add_post/<template_id>',views.add_post,name="add-post"),
     path('select_template/<community_id>',views.template_get,name="select-template"),
+    path('advanced_search_select/<community_id>',views.template_advanced_get,name="advanced_search_select"),
     path('add_userprofile',views.add_userprofile,name="add-userprofile"),
     path('show_userprofile',views.show_userprofile,name="show-userprofile"),
     path('assign_user_role/<user_id>/<community_id>/<role_id>',views.assign_user_role,name="assign_user_role"),
@@ -38,6 +39,7 @@ urlpatterns = [
     path('comments_edit/<comment_id>/', views.edit_comment, name='comments_edit'),
     path('edit_post/<post_id>/', views.edit_post, name='edit_post'),
     path('search_posts', views.search_posts, name='search_posts'),
+    path('search/<template_id>/', views.advanced_search_posts, name='advanced_search_posts'),
 ]
 
 
