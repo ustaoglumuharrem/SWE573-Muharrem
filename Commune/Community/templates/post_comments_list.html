@@ -12,21 +12,27 @@
                 {% if key != 'title' and key != 'description' and key != 'latitude' and key != 'longitude' %}
                     <p><strong>{{ key }}:</strong>
                     {% if item.type == 'image' %}
-                        <img src="{{ MEDIA_URL }}{{ item.value }}"  alt="Image related to {{ post.content.title.value }}" style="width: 160px !important; height: 120px !important;">
+                        <a href="{{ item.value }}">{{ item.value }}</a>
+
+                        <!-- <img src="{{ MEDIA_URL }}{{ item.value }}"  alt="Image related to {{ post.content.title.value }}" style="width: 160px !important; height: 120px !important;"> -->
                     {% elif item.type == 'email' %}
-                        <a href="mailto:{{ item.value }}">{{ item.value }}</a>
+                        <a href="{{ item.value }}">{{ item.value }}</a>
                     {% elif item.type == 'file' %}
                         <!-- Handle file types that are actually videos -->
-                        <video width="320" height="240" controls>
+                        <a href="{{ item.value }}">{{ item.value }}</a>
+
+                        <!-- <video width="320" height="240" controls>
                             <source src="{{ MEDIA_URL }}{{ item.value }}" type="video/mp4">
                             Your browser does not support the video tag.
-                        </video>
+                        </video> -->
                     {% elif item.type == 'video' %}
                         <!-- Explicitly handle video files -->
-                        <video width="320" height="240" controls>
+                        <a href="video:{{ item.value }}">{{ item.value }}</a>
+
+                        <!-- <video width="320" height="240" controls>
                             <source src="{{ MEDIA_URL }}{{ item.value }}" type="video/mp4">
                             Your browser does not support the video tag.
-                        </video>
+                        </video> -->
                     
                     {% else %}
                         {{ item.value }}

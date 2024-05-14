@@ -54,13 +54,51 @@ class PostForm(forms.ModelForm):
 import json
 from django import forms
 import datetime
+# def generate_form(template_json_str):
+#     template_json = json.loads(template_json_str)
+#     class DynamicForm(forms.Form):
+#         title = forms.CharField(label='Title', required=False, max_length=256)
+#         description = forms.CharField(widget=forms.Textarea, label='Description', required=False)
+
+#         # Initialize latitude and longitude as None
+#         latitude = None
+#         longitude = None
+
+#         for field in template_json.get('template', []):
+#             field_name = field.get('typename')
+#             field_type = field.get('typefield')
+#             field_label = field_name.capitalize()
+
+#             # Create fields based on type
+#             if field_type == 'text':
+#                 locals()[field_name] = forms.CharField(label=field_label)
+#             elif field_type == 'image':
+#                 locals()[field_name] = forms.ImageField(label=field_label)
+#             elif field_type == 'email':
+#                 locals()[field_name] = forms.EmailField(label=field_label)
+#             elif field_type == 'date':
+#                 locals()[field_name] = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), label=field_label)
+#             elif field_type == 'number':
+#                 locals()[field_name] = forms.DecimalField(label=field_label)   
+#             elif field_type == 'video':
+#                 locals()[field_name] = forms.FileField(label=field_label)
+#             elif field_type == 'year':
+#                 locals()[field_name] = forms.IntegerField(min_value=1900, max_value=datetime.date.today().year, label=field_label)
+#             elif field_type == 'location':
+#                 # Add latitude and longitude fields only if 'location' type is specified
+#                 locals()['latitude'] = forms.FloatField(widget=forms.HiddenInput(), required=False)
+#                 locals()['longitude'] = forms.FloatField(widget=forms.HiddenInput(), required=False)
+
+
+#     return DynamicForm
+
+
 def generate_form(template_json_str):
     template_json = json.loads(template_json_str)
     class DynamicForm(forms.Form):
         title = forms.CharField(label='Title', required=False, max_length=256)
         description = forms.CharField(widget=forms.Textarea, label='Description', required=False)
 
-        # Initialize latitude and longitude as None
         latitude = None
         longitude = None
 
@@ -69,26 +107,21 @@ def generate_form(template_json_str):
             field_type = field.get('typefield')
             field_label = field_name.capitalize()
 
-            # Create fields based on type
             if field_type == 'text':
                 locals()[field_name] = forms.CharField(label=field_label)
-            elif field_type == 'image':
-                locals()[field_name] = forms.ImageField(label=field_label)
+            elif field_type == 'image' or field_type == 'video':
+                locals()[field_name] = forms.URLField(label=field_label, help_text=f"Enter the URL for the {field_label.lower()}")
             elif field_type == 'email':
                 locals()[field_name] = forms.EmailField(label=field_label)
             elif field_type == 'date':
                 locals()[field_name] = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), label=field_label)
             elif field_type == 'number':
-                locals()[field_name] = forms.DecimalField(label=field_label)   
-            elif field_type == 'video':
-                locals()[field_name] = forms.FileField(label=field_label)
+                locals()[field_name] = forms.DecimalField(label=field_label)
             elif field_type == 'year':
                 locals()[field_name] = forms.IntegerField(min_value=1900, max_value=datetime.date.today().year, label=field_label)
             elif field_type == 'location':
-                # Add latitude and longitude fields only if 'location' type is specified
                 locals()['latitude'] = forms.FloatField(widget=forms.HiddenInput(), required=False)
                 locals()['longitude'] = forms.FloatField(widget=forms.HiddenInput(), required=False)
-
 
     return DynamicForm
 

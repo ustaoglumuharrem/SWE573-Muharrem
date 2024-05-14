@@ -182,13 +182,16 @@ def edit_post(request, post_id):
     return render(request, 'edit_post.html', {'form': form, 'post': post})
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
+
 def add_post(request, template_id):
+    from django.core.files.storage import default_storage
+    from django.shortcuts import redirect, render
+
     template = CommunityTemplate.objects.get(pk=template_id)
     FormClass = generate_form(template.template)
 
     form = FormClass(request.POST or None, request.FILES or None)
     if request.method == 'POST' and form.is_valid():
-        # Convert fields to appropriate formats before saving
         latitude = form.cleaned_data.get('latitude')
         longitude = form.cleaned_data.get('longitude')
         cleaned_data = {}
@@ -198,35 +201,73 @@ def add_post(request, template_id):
         for key, value in form.cleaned_data.items():
             field_type = type_mapping.get(key)
             if isinstance(value, datetime.date):
-                # Convert date to ISO format and store with type
                 cleaned_data[key] = {'value': value.isoformat(), 'type': field_type}
             elif isinstance(value, Decimal):
-                # Convert decimal to string to preserve precision and store with type
                 cleaned_data[key] = {'value': str(value), 'type': field_type}
-            elif hasattr(value, 'read'):  # Check if the field is a file upload
-                # Save file and categorize based on content type
-                file_path = default_storage.save(value.name, value)
-                if value.content_type.startswith('image/'):
-                    cleaned_data[key] = {'value': file_path, 'type': 'image'}
-                elif value.content_type.startswith('video/'):
-                    cleaned_data[key] = {'value': file_path, 'type': 'video'}
-                else:
-                    cleaned_data[key] = {'value': file_path, 'type': 'file'}
+            # elif hasattr(value, 'read'):  # Handle file uploads differently
+            #     # Generate URL for the file, store URL, and make it clickable
+            #     file_url = default_storage.url(default_storage.save(value.name, value))
+            #     cleaned_data[key] = {'value': f"<a href='{file_url}' target='_blank'>{file_url}</a>", 'type': field_type}
             else:
-                # Store other types as is
                 cleaned_data[key] = {'value': value, 'type': field_type}
-        
+
         new_post = Post.objects.create(
             title=cleaned_data.get('title', {}).get('value', ''),
             description=cleaned_data.get('description', {}).get('value', ''),
             template_id=template.id,
-            content=json.dumps(cleaned_data),  # Serialize the dictionary with types and values
+            content=json.dumps(cleaned_data),
             user_id=request.user.id,
             community_id=template.community_id
         )
         return redirect('list-communities')
 
     return render(request, 'add_post.html', {'form': form, 'template': template})
+
+# def add_post(request, template_id):
+#     template = CommunityTemplate.objects.get(pk=template_id)
+#     FormClass = generate_form(template.template)
+
+#     form = FormClass(request.POST or None, request.FILES or None)
+#     if request.method == 'POST' and form.is_valid():
+#         # Convert fields to appropriate formats before saving
+#         latitude = form.cleaned_data.get('latitude')
+#         longitude = form.cleaned_data.get('longitude')
+#         cleaned_data = {}
+#         field_types = json.loads(template.template).get('template', [])
+#         type_mapping = {field['typename']: field['typefield'] for field in field_types}
+
+#         for key, value in form.cleaned_data.items():
+#             field_type = type_mapping.get(key)
+#             if isinstance(value, datetime.date):
+#                 # Convert date to ISO format and store with type
+#                 cleaned_data[key] = {'value': value.isoformat(), 'type': field_type}
+#             elif isinstance(value, Decimal):
+#                 # Convert decimal to string to preserve precision and store with type
+#                 cleaned_data[key] = {'value': str(value), 'type': field_type}
+#             elif hasattr(value, 'read'):  # Check if the field is a file upload
+#                 # Save file and categorize based on content type
+#                 file_path = default_storage.save(value.name, value)
+#                 if value.content_type.startswith('image/'):
+#                     cleaned_data[key] = {'value': file_path, 'type': 'image'}
+#                 elif value.content_type.startswith('video/'):
+#                     cleaned_data[key] = {'value': file_path, 'type': 'video'}
+#                 else:
+#                     cleaned_data[key] = {'value': file_path, 'type': 'file'}
+#             else:
+#                 # Store other types as is
+#                 cleaned_data[key] = {'value': value, 'type': field_type}
+        
+#         new_post = Post.objects.create(
+#             title=cleaned_data.get('title', {}).get('value', ''),
+#             description=cleaned_data.get('description', {}).get('value', ''),
+#             template_id=template.id,
+#             content=json.dumps(cleaned_data),  # Serialize the dictionary with types and values
+#             user_id=request.user.id,
+#             community_id=template.community_id
+#         )
+#         return redirect('list-communities')
+
+#     return render(request, 'add_post.html', {'form': form, 'template': template})
 
 
 
