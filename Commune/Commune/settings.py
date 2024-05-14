@@ -69,7 +69,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'Commune.wsgi'
+WSGI_APPLICATION = 'Commune.wsgi.application'
 
 
 # Database
