@@ -13,3 +13,5 @@ db.sqlite3
 # Ignore system-specific files
 *.DS_Store
 Thumbs.db
+
+env/
