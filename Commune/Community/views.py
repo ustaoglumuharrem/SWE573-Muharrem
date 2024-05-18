@@ -21,9 +21,8 @@ from django.contrib.auth.models import User
 import datetime  # Import the datetime module
 from decimal import Decimal
 from django.core.files.storage import default_storage
-from django.db.models import Q
 from .forms import generate_dynamic_search_form
-
+import decimal
 
 def add_userprofile(request):
     submitted = False
@@ -163,15 +162,10 @@ def edit_post(request, post_id):
                 cleaned_data[key] = {'value': value.isoformat(), 'type': field_type}
             elif isinstance(value, Decimal):
                 cleaned_data[key] = {'value': str(value), 'type': field_type}
-            elif hasattr(value, 'read'):  # Check if the field is a file upload
-                # Save file and categorize based on content type
-                file_path = default_storage.save(value.name, value)
-                if value.content_type.startswith('image/'):
-                    cleaned_data[key] = {'value': file_path, 'type': 'image'}
-                elif value.content_type.startswith('video/'):
-                    cleaned_data[key] = {'value': file_path, 'type': 'video'}
-                else:
-                    cleaned_data[key] = {'value': file_path, 'type': 'file'}
+            # elif hasattr(value, 'read'):  # Handle file uploads differently
+            #     # Generate URL for the file, store URL, and make it clickable
+            #     file_url = default_storage.url(default_storage.save(value.name, value))
+            #     cleaned_data[key] = {'value': f"<a href='{file_url}' target='_blank'>{file_url}</a>", 'type': field_type}
             else:
                 cleaned_data[key] = {'value': value, 'type': field_type}
 
@@ -251,6 +245,8 @@ def create_template(request,community_id):
     return render(request, 'create_template.html',{'community_id': community_id})
 
 
+
+
 def advanced_search_posts(request, template_id):
     template = get_object_or_404(CommunityTemplate, pk=template_id)
     FormClass = generate_dynamic_search_form(template.template)
@@ -312,6 +308,7 @@ def advanced_search_posts(request, template_id):
         return render(request, 'advanced_search_results.html', {'form': form, 'posts': filtered_posts})
 
     return render(request, 'search_form.html', {'form': form, 'template_id': template_id})
+
 
 
 def upvote_post(request,post_id,community_id):
