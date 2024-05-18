@@ -23,10 +23,7 @@ from decimal import Decimal
 from django.core.files.storage import default_storage
 from django.db.models import Q
 from .forms import generate_dynamic_search_form
-# from datetime import datetime
-from django.core.files import File
-import requests
-from tempfile import NamedTemporaryFile
+import decimal
 
 def add_userprofile(request):
     submitted = False
@@ -253,7 +250,8 @@ def create_template(request,community_id):
     # Render the form template if not POST request
     return render(request, 'create_template.html',{'community_id': community_id})
 
-from django.core.serializers.json import DjangoJSONEncoder
+
+
 
 def advanced_search_posts(request, template_id):
     template = get_object_or_404(CommunityTemplate, pk=template_id)
@@ -272,16 +270,41 @@ def advanced_search_posts(request, template_id):
                 if value:
                     field_type = next((item for item in json.loads(template.template)['template'] if item["typename"] == field), {}).get('typefield')
 
+                    post_value = content.get(field, {}).get('value', '')
+
                     if field_type == 'date':
                         if isinstance(value, datetime.date):
                             value = value.isoformat()
-                        if content.get(field, {}).get('value') != value:
+                        if post_value != value:
+                            match = False
+                            break
+                    elif field_type == 'number':
+                        # Compare numerical values directly
+                        if isinstance(value, (int, float, decimal.Decimal)) and isinstance(post_value, (int, float, decimal.Decimal)):
+                            if value != post_value:
+                                match = False
+                                break
+                    elif field_type in ['email', 'video', 'image']:
+                        # Ensure both are strings for comparison
+                        if not isinstance(post_value, str):
+                            post_value = str(post_value)
+                        if not isinstance(value, str):
+                            value = str(value)
+
+                        if value.lower() not in post_value.lower():
                             match = False
                             break
                     else:
-                        if value.lower() not in content.get(field, {}).get('value', '').lower():
+                        # Ensure both are strings for comparison
+                        if not isinstance(post_value, str):
+                            post_value = str(post_value)
+                        if not isinstance(value, str):
+                            value = str(value)
+
+                        if value.lower() not in post_value.lower():
                             match = False
                             break
+
             if match:
                 post.content = content  # Update the post's content with the deserialized JSON
                 filtered_posts.append(post)
@@ -291,6 +314,7 @@ def advanced_search_posts(request, template_id):
         return render(request, 'advanced_search_results.html', {'form': form, 'posts': filtered_posts})
 
     return render(request, 'search_form.html', {'form': form, 'template_id': template_id})
+
 
 
 def upvote_post(request,post_id,community_id):

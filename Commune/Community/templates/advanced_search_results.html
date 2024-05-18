@@ -5,6 +5,7 @@
 
 {% if posts %}
     {% for post in posts %}
+    <a href="{% url 'advanced_search_select' post.community_id %}">Advanced Search</a>
     <li>
         <h2>
             <a href="{% url 'post_detail' post.id %}">{{ post.content.title.value }}</a>
@@ -20,21 +21,24 @@
                 {% if key != 'title' and key != 'description' and key != 'latitude' and key != 'longitude' %}
                     <p><strong>{{ key }}:</strong>
                     {% if item.type == 'image' %}
-                        <img src="{{ MEDIA_URL }}{{ item.value }}" alt="Image related to {{ post.content.title.value }} width="320" height="240"">
-                        {% elif item.type == 'email' %}
+                        <a href="{{ item.value }}">{{ item.value }}</a>
+                        <!-- <img src="{{ MEDIA_URL }}{{ item.value }}" alt="Image related to {{ post.content.title.value }} width="320" height="240""> -->
+                    {% elif item.type == 'email' %}
                         <a href="mailto:{{ item.value }}">{{ item.value }}</a>
                     {% elif item.type == 'file' %}
                         <!-- Handle file types that are actually videos -->
-                        <video width="320" height="240" controls>
+                        <a href="{{ item.value }}">{{ item.value }}</a>
+                        <!-- <video width="320" height="240" controls>
                             <source src="{{ MEDIA_URL }}{{ item.value }}" type="video/mp4">
                             Your browser does not support the video tag.
-                        </video>
+                        </video> -->
                     {% elif item.type == 'video' %}
                         <!-- Explicitly handle video files -->
-                        <video width="320" height="240" controls>
+                        <a href="{{ item.value }}">{{ item.value }}</a>
+                        <!-- <video width="320" height="240" controls>
                             <source src="{{ MEDIA_URL }}{{ item.value }}" type="video/mp4">
                             Your browser does not support the video tag.
-                        </video>
+                        </video> -->
                     {% else %}
                         {{ item.value }}
                     {% endif %}
@@ -54,7 +58,7 @@
                 <button type="submit">Downvote</button>{{ post.downvote }}
             </form>
         </div>
-
+    
         {% if post.content.latitude.value and post.content.longitude.value %}
             <div id="map_{{ post.id }}" style="height: 250px;"></div>
             <script>
