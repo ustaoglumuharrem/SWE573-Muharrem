@@ -132,6 +132,8 @@ def generate_dynamic_search_form(template_json_str):
                         min_value=1900, 
                         max_value=datetime.date.today().year
                     )
+                elif field_type in ['video', 'image']:
+                    self.fields[field_name] = forms.URLField(label=field_label, required=False)
 
     return DynamicSearchForm
 
