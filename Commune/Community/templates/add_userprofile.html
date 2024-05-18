@@ -4,17 +4,12 @@
     <h1>Create Profile</h1>
     <br/><br/>
     {% if submitted %}
-    Your Profile Was Submitted Succefully!!!
-
+    Your Profile Was Submitted Successfully!!!
     {% else %}
-
-    <form action="" method=POST enctype="multipart/form-data">
+    <form action="" method="POST">
         {% csrf_token %}
         {{ form.as_p }}
         <input type="submit" value="Submit" class="btn btn-secondary">
     </form>
     {% endif %}
-
-
-      
 {% endblock %}
