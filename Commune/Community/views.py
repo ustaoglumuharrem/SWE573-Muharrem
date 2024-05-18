@@ -276,7 +276,14 @@ def advanced_search_posts(request, template_id):
                             match = False
                             break
                     else:
-                        if value.lower() not in content.get(field, {}).get('value', '').lower():
+                        post_value = content.get(field, {}).get('value', '')
+                        # Check type of value before applying .lower() method
+                        if isinstance(post_value, str):
+                            post_value = post_value.lower()
+                        if isinstance(value, str):
+                            value = value.lower()
+
+                        if value not in post_value:
                             match = False
                             break
             if match:
