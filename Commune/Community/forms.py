@@ -11,14 +11,33 @@ from .models import Role
 from django import forms
 import json
 class CommunityForm(ModelForm):
+    TYPE_CHOICES = (
+        (False, 'Public'),
+        (True, 'Private'),
+    )
+    type = forms.ChoiceField(choices=TYPE_CHOICES, widget=forms.RadioSelect, initial=False)
+
     class Meta:
         model = Community
         fields = ['name', 'description', 'type', 'privacyPolicy']
 
 class UserProfileForm(ModelForm):
+    photo = forms.URLField(
+        label='Photo URL',
+        required=False,
+        widget=forms.URLInput(attrs={'placeholder': 'Enter photo URL'}),
+        max_length=100,  # Ensure the max_length matches the database constraint
+    )
+
     class Meta:
         model = UserProfile
         fields = ['nickname', 'about', 'title', 'photo']
+
+    def clean_photo(self):
+        photo_url = self.cleaned_data.get('photo')
+        if len(photo_url) > 100:
+            raise forms.ValidationError("The URL is too long. It should be up to 100 characters.")
+        return photo_url
         
 class MembershipForm(ModelForm):
     class Meta:
@@ -54,45 +73,6 @@ class PostForm(forms.ModelForm):
 import json
 from django import forms
 import datetime
-# def generate_form(template_json_str):
-#     template_json = json.loads(template_json_str)
-#     class DynamicForm(forms.Form):
-#         title = forms.CharField(label='Title', required=False, max_length=256)
-#         description = forms.CharField(widget=forms.Textarea, label='Description', required=False)
-
-#         # Initialize latitude and longitude as None
-#         latitude = None
-#         longitude = None
-
-#         for field in template_json.get('template', []):
-#             field_name = field.get('typename')
-#             field_type = field.get('typefield')
-#             field_label = field_name.capitalize()
-
-#             # Create fields based on type
-#             if field_type == 'text':
-#                 locals()[field_name] = forms.CharField(label=field_label)
-#             elif field_type == 'image':
-#                 locals()[field_name] = forms.ImageField(label=field_label)
-#             elif field_type == 'email':
-#                 locals()[field_name] = forms.EmailField(label=field_label)
-#             elif field_type == 'date':
-#                 locals()[field_name] = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), label=field_label)
-#             elif field_type == 'number':
-#                 locals()[field_name] = forms.DecimalField(label=field_label)   
-#             elif field_type == 'video':
-#                 locals()[field_name] = forms.FileField(label=field_label)
-#             elif field_type == 'year':
-#                 locals()[field_name] = forms.IntegerField(min_value=1900, max_value=datetime.date.today().year, label=field_label)
-#             elif field_type == 'location':
-#                 # Add latitude and longitude fields only if 'location' type is specified
-#                 locals()['latitude'] = forms.FloatField(widget=forms.HiddenInput(), required=False)
-#                 locals()['longitude'] = forms.FloatField(widget=forms.HiddenInput(), required=False)
-
-
-#     return DynamicForm
-
-
 def generate_form(template_json_str):
     template_json = json.loads(template_json_str)
     class DynamicForm(forms.Form):
@@ -141,14 +121,10 @@ def generate_dynamic_search_form(template_json_str):
                     self.fields[field_name] = forms.CharField(label=field_label, required=False)
                 elif field_type == 'number':
                     self.fields[field_name] = forms.DecimalField(label=field_label, required=False)
-                # elif field_type == 'image':
-                #     self.fields[field_name] = forms.ImageField(label=field_label, required=False)
                 elif field_type == 'email':
                     self.fields[field_name] = forms.EmailField(label=field_label, required=False)
                 elif field_type == 'date':
                     self.fields[field_name] = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), label=field_label)
-                # elif field_type == 'video':
-                #     self.fields[field_name] = forms.FileField(label=field_label, required=False)
                 elif field_type == 'year':
                     self.fields[field_name] = forms.IntegerField(
                         label=field_label, 
@@ -156,10 +132,8 @@ def generate_dynamic_search_form(template_json_str):
                         min_value=1900, 
                         max_value=datetime.date.today().year
                     )
-                # Add other specific fields and conditions as necessary
 
     return DynamicSearchForm
-
 
 class GeoLocationWidget(forms.MultiWidget):
     def __init__(self, attrs=None):
@@ -178,4 +152,3 @@ class GeoLocationWidget(forms.MultiWidget):
         lat = data.get(name + '_0', None)
         lng = data.get(name + '_1', None)
         return ','.join([lat, lng]) if lat and lng else None
-

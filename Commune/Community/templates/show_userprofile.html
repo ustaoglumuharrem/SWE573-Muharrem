@@ -1,17 +1,17 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h1>UserProfile</h1>
+<h1>User Profile</h1>
 <br/>
 {% if profile %}
-    <form action="" method="POST" enctype="multipart/form-data">
+    <form action="" method="POST">
         {% csrf_token %}
         {{ form.as_p }}
         <input type="submit" value="Submit" class="btn btn-secondary">
     </form>
-<br/>
+    <br/>
+    <p><strong>Photo URL:</strong> <a href="{{ profile.photo }}" target="_blank">{{ profile.photo }}</a></p>
 {% else %}
-    <!-- Assuming you have a view and url configured for creating a new user profile -->
     <a href="{% url 'add-userprofile' %}">Create Profile</a>
 {% endif %}
 {% endblock %}

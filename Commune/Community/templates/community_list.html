@@ -18,7 +18,7 @@
                     <a href="{% url 'update-community' item.community.id %}">Update</a> 
                     <a href="{% url 'all_communities_user' item.community.id %}">User Management</a>
                     <a href="{% url 'invite_user' item.community.id %}">Invite User</a> 
-                    <a href="{% url 'create_template' item.community.id %}">Create Template</a> {{ item.community.id }}
+                    <a href="{% url 'create_template' item.community.id %}">Create Template</a>
                 {% endif %}
 
                 {% if item.moderator  or item.member  %}
@@ -28,8 +28,9 @@
                 <a href="{% url 'join-community' item.community.id %}">Join</a> 
             {% endif %}
         {% else %}
-            <strong>{{ item.community }}</strong>
+            
             {% if item.owner  or item.member  or item.moderator %}
+                <strong>{{ item.community }}</strong>
                 <a href="{% url 'show_posts' item.community.id %}">View Post</a> 
                 <a href="{% url 'show-community' item.community.id %}">Add Post</a>
                 <a href="{% url 'members_community' item.community.id %}">-Members</a> 
@@ -39,7 +40,7 @@
                     <a href="{% url 'update-community' item.community.id %}">-Update</a> 
                     <a href="{% url 'all_communities_user' item.community.id %}">-User Management</a>
                     <a href="{% url 'invite_user' item.community.id %}">-Invite User</a> 
-                    <a href="{% url 'create_template' item.community.id %}">-Create Template</a> {{ item.community.id }}
+                    <a href="{% url 'create_template' item.community.id %}">-Create Template</a>
                 {% endif %}
 
                 {% if item.moderator  or item.member  %}

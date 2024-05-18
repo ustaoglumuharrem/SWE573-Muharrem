@@ -24,48 +24,55 @@ from django.core.files.storage import default_storage
 from django.db.models import Q
 from .forms import generate_dynamic_search_form
 # from datetime import datetime
+from django.core.files import File
+import requests
+from tempfile import NamedTemporaryFile
+
 def add_userprofile(request):
-    submitted =False
+    submitted = False
     if request.method == "POST":
-        form = UserProfileForm(request.POST, request.FILES)
+        form = UserProfileForm(request.POST)
         if form.is_valid():
-            userprofile=UserProfile(
+            userprofile = UserProfile(
                 nickname=form.cleaned_data['nickname'],
                 about=form.cleaned_data['about'],
                 title=form.cleaned_data['title'],
-                photo=form.cleaned_data['photo'],
                 user=request.user
             )
+            
+            # Handle the photo URL
+            photo_url = form.cleaned_data['photo']
+            if photo_url:
+                userprofile.photo.name = photo_url  # Save URL directly as a string
+
             userprofile.save()
             return HttpResponseRedirect('?submitted=True')
     else:
         form = UserProfileForm()
         if 'submitted' in request.GET:
-                submitted =True
-    return render(request,'add_userprofile.html',{ 'form': form, 'submitted':submitted})
-
-
+            submitted = True
+    return render(request, 'add_userprofile.html', {'form': form, 'submitted': submitted})
 
 def show_userprofile(request):
     try:
-        # Attempt to retrieve the UserProfile for the currently logged-in user.
-        profile = UserProfile.objects.get(user_id=request.user.id)
+        profile = UserProfile.objects.get(user=request.user)
     except UserProfile.DoesNotExist:
-        # Redirect to add-userprofile page or show a link to create a profile.
         return redirect('add-userprofile')
     
-    # Initialize the form either with form data (POST) or with instance data (GET).
+    form = UserProfileForm(request.POST or None, instance=profile)
     
-    form = UserProfileForm(request.POST or None,request.FILES or None , instance=profile)
-    
-    if request.method == 'POST':
-        # Check if the form is valid on submitting.
-        if form.is_valid():
-            form.save()
-            # You might want to redirect to a confirmation page or the same page to show updated data
-            return redirect('show-userprofile')  # Assuming 'profile-success' is a valid URL name
+    if request.method == 'POST' and form.is_valid():
+        profile.nickname = form.cleaned_data['nickname']
+        profile.about = form.cleaned_data['about']
+        profile.title = form.cleaned_data['title']
 
-    # If GET request or form is not valid, render the same page with the form.
+        # Handle the photo URL
+        photo_url = form.cleaned_data['photo']
+        if photo_url:
+            profile.photo.name = photo_url  # Save URL directly as a string
+
+        profile.save()
+        return redirect('show-userprofile')
     
     return render(request, 'show_userprofile.html', {'form': form, 'profile': profile})
 
@@ -182,7 +189,6 @@ def edit_post(request, post_id):
     return render(request, 'edit_post.html', {'form': form, 'post': post})
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
-
 def add_post(request, template_id):
     from django.core.files.storage import default_storage
     from django.shortcuts import redirect, render
@@ -223,53 +229,6 @@ def add_post(request, template_id):
 
     return render(request, 'add_post.html', {'form': form, 'template': template})
 
-# def add_post(request, template_id):
-#     template = CommunityTemplate.objects.get(pk=template_id)
-#     FormClass = generate_form(template.template)
-
-#     form = FormClass(request.POST or None, request.FILES or None)
-#     if request.method == 'POST' and form.is_valid():
-#         # Convert fields to appropriate formats before saving
-#         latitude = form.cleaned_data.get('latitude')
-#         longitude = form.cleaned_data.get('longitude')
-#         cleaned_data = {}
-#         field_types = json.loads(template.template).get('template', [])
-#         type_mapping = {field['typename']: field['typefield'] for field in field_types}
-
-#         for key, value in form.cleaned_data.items():
-#             field_type = type_mapping.get(key)
-#             if isinstance(value, datetime.date):
-#                 # Convert date to ISO format and store with type
-#                 cleaned_data[key] = {'value': value.isoformat(), 'type': field_type}
-#             elif isinstance(value, Decimal):
-#                 # Convert decimal to string to preserve precision and store with type
-#                 cleaned_data[key] = {'value': str(value), 'type': field_type}
-#             elif hasattr(value, 'read'):  # Check if the field is a file upload
-#                 # Save file and categorize based on content type
-#                 file_path = default_storage.save(value.name, value)
-#                 if value.content_type.startswith('image/'):
-#                     cleaned_data[key] = {'value': file_path, 'type': 'image'}
-#                 elif value.content_type.startswith('video/'):
-#                     cleaned_data[key] = {'value': file_path, 'type': 'video'}
-#                 else:
-#                     cleaned_data[key] = {'value': file_path, 'type': 'file'}
-#             else:
-#                 # Store other types as is
-#                 cleaned_data[key] = {'value': value, 'type': field_type}
-        
-#         new_post = Post.objects.create(
-#             title=cleaned_data.get('title', {}).get('value', ''),
-#             description=cleaned_data.get('description', {}).get('value', ''),
-#             template_id=template.id,
-#             content=json.dumps(cleaned_data),  # Serialize the dictionary with types and values
-#             user_id=request.user.id,
-#             community_id=template.community_id
-#         )
-#         return redirect('list-communities')
-
-#     return render(request, 'add_post.html', {'form': form, 'template': template})
-
-
 
 def create_template(request,community_id):
     if request.method == 'POST':
@@ -302,40 +261,37 @@ def advanced_search_posts(request, template_id):
     form = FormClass(request.GET or None)
 
     if request.method == 'GET' and form.is_valid():
-        # Initialize the query with a template filter, if needed.
-        query = Post.objects.filter(template=template)
-        query.filter
+        posts = Post.objects.filter(template=template)
+        print(f"Initial query: {posts}")
 
-        for field, value in form.cleaned_data.items():
-            if value:
-                # Properly handle different data types
-                if 'date' in field and isinstance(value, str):
-                    try:
-                        # Convert string to date and then to string in ISO format for JSON compatibility
-                        value = datetime.datetime.strptime(value, '%Y-%m-%d').isoformat()
-                    except ValueError:
-                        continue  # Skip incorrect date formats.
-
-                # Build dynamic JSON field query
-                json_field_query = f"content__{field}__value__icontains"
-                query = query.filter(**{json_field_query: value})
-
-        # Evaluate the queryset to apply JSON and other filters
-        posts = list(query)
-
-        # Serialize post content to JSON string if needed and convert dates
+        filtered_posts = []
         for post in posts:
-            # Ensuring JSON serialization for complex data structures
-            if isinstance(post.content, dict):
-                post.content = json.dumps(post.content, cls=DjangoJSONEncoder)
-            if 'date' in post.content:
-                post.content['date'] = datetime.datetime.strptime(post.content['date'], '%Y-%m-%d').date().isoformat()
+            content = json.loads(post.content)
+            match = True
+            for field, value in form.cleaned_data.items():
+                if value:
+                    field_type = next((item for item in json.loads(template.template)['template'] if item["typename"] == field), {}).get('typefield')
 
-        # Render the results
-        return render(request, 'advanced_search_results.html', {'form': form, 'posts': posts})
+                    if field_type == 'date':
+                        if isinstance(value, datetime.date):
+                            value = value.isoformat()
+                        if content.get(field, {}).get('value') != value:
+                            match = False
+                            break
+                    else:
+                        if value.lower() not in content.get(field, {}).get('value', '').lower():
+                            match = False
+                            break
+            if match:
+                post.content = content  # Update the post's content with the deserialized JSON
+                filtered_posts.append(post)
 
-    # Handle initial form rendering if the GET request is not valid or not submitted
+        print(f"Posts found: {filtered_posts}")
+
+        return render(request, 'advanced_search_results.html', {'form': form, 'posts': filtered_posts})
+
     return render(request, 'search_form.html', {'form': form, 'template_id': template_id})
+
 
 def upvote_post(request,post_id,community_id):
     post=Post.objects.get(id=post_id)
@@ -387,20 +343,27 @@ def show_community(request,community_id):
     posts = Post.objects.filter(community=community, isDeleted=False).order_by('-createDate')
     return render(request,'show_community.html',{'community':community,'post':posts})
 
-def add_communities(request,user_id):
-    submitted =False
+def add_communities(request, user_id):
+    submitted = False
     if request.method == "POST":
         form = CommunityForm(request.POST)
         if form.is_valid():
-            created_community=form.save()
-            assign_role(user_id,created_community.id,1)
+            created_community = form.save()
+            assign_role(user_id, created_community.id, 1)
+            
+            default_template = CommunityTemplate(
+                template='{"template": []}', 
+                name="Default Template",
+                community=created_community
+            )
+            default_template.save()
+            
             return HttpResponseRedirect('add_communities?submitted=True')
-        
     else:
         form = CommunityForm()
         if 'submitted' in request.GET:
-                submitted =True
-    return render(request,'add_community.html',{'form':form, 'submitted':submitted,'user_id':user_id})
+            submitted = True
+    return render(request, 'add_community.html', {'form': form, 'submitted': submitted, 'user_id': user_id})
 
 def all_communities(request):
     community_list = Community.objects.all()
@@ -531,12 +494,14 @@ def send_invitation(request,user_id,community_id):
     return redirect('list-communities')  # Using 'redirect' shortcut here
 
 
-def members_community(request,community_id):
-    user_community_members = Community.objects.get(id=community_id)
-    
-    # Create a list to hold the combined data
-   
-    return render(request, 'show_members.html', {"user_community_members": user_community_members})
+def members_community(request, community_id):
+    community = get_object_or_404(Community, pk=community_id)
+    memberships = Membership.objects.filter(community=community)
+
+    return render(request, 'show_members.html', {
+        'community': community,
+        'memberships': memberships,
+    })
 
 
 def send_kick_notification(user_id,community_id):
@@ -576,9 +541,3 @@ def approve_or_reject_notification(request,notification_id,community_name, answe
         assign_role(request.user.id,community.id,3)
 
     return redirect('show_notification')  # Using 'redirect' shortcut here
-
-
-
-
-
-
