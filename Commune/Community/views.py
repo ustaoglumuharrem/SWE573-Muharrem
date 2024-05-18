@@ -23,7 +23,7 @@ from decimal import Decimal
 from django.core.files.storage import default_storage
 from .forms import generate_dynamic_search_form
 import decimal
-
+from django.db.models import Q
 def add_userprofile(request):
     submitted = False
     if request.method == "POST":
