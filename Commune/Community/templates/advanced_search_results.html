@@ -4,11 +4,80 @@
 <h1>Search Results</h1>
 
 {% if posts %}
-    <ul>
-        {% for post in posts %}
-            <li>{{ post.title }} - {{ post.description }}</li>
-        {% endfor %}
-    </ul>
+    {% for post in posts %}
+    <a href="{% url 'advanced_search_select' post.community_id %}">Advanced Search</a>
+    <li>
+        <h2>
+            <a href="{% url 'post_detail' post.id %}">{{ post.content.title.value }}</a>
+            <!-- Edit link -->
+            {%if post.user_id == user.id %}
+                <a href="{% url 'edit_post' post.id %}">(Edit)</a>
+            {%endif%}
+        </h2>
+        <p>Description: {{ post.content.description.value }}</p>
+        <div>
+            <h3>Additional Details:</h3>
+            {% for key, item in post.content.items %}
+                {% if key != 'title' and key != 'description' and key != 'latitude' and key != 'longitude' %}
+                    <p><strong>{{ key }}:</strong>
+                    {% if item.type == 'image' %}
+                        <a href="{{ item.value }}">{{ item.value }}</a>
+                        <!-- <img src="{{ MEDIA_URL }}{{ item.value }}" alt="Image related to {{ post.content.title.value }} width="320" height="240""> -->
+                    {% elif item.type == 'email' %}
+                        <a href="mailto:{{ item.value }}">{{ item.value }}</a>
+                    {% elif item.type == 'file' %}
+                        <!-- Handle file types that are actually videos -->
+                        <a href="{{ item.value }}">{{ item.value }}</a>
+                        <!-- <video width="320" height="240" controls>
+                            <source src="{{ MEDIA_URL }}{{ item.value }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video> -->
+                    {% elif item.type == 'video' %}
+                        <!-- Explicitly handle video files -->
+                        <a href="{{ item.value }}">{{ item.value }}</a>
+                        <!-- <video width="320" height="240" controls>
+                            <source src="{{ MEDIA_URL }}{{ item.value }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video> -->
+                    {% else %}
+                        {{ item.value }}
+                    {% endif %}
+                    </p>
+                {% endif %}
+            {% endfor %}
+        </div>
+        <div>
+            <small style="margin-right: 15px;">Posted by {{ post.user }}</small>
+            <small style="margin-right: 15px;">Posted on {{ post.createDate|date:"Y-m-d H:i" }}</small>
+            <form action="{% url 'upvote_post' post.id post.community_id %}" method="post">
+                {% csrf_token %}
+                <button type="submit">Upvote</button>{{ post.upvote }}
+            </form>
+            <form action="{% url 'downvote_post' post.id post.community_id %}" method="post">
+                {% csrf_token %}
+                <button type="submit">Downvote</button>{{ post.downvote }}
+            </form>
+        </div>
+    
+        {% if post.content.latitude.value and post.content.longitude.value %}
+            <div id="map_{{ post.id }}" style="height: 250px;"></div>
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    var latitude = parseFloat('{{ post.content.latitude.value }}');
+                    var longitude = parseFloat('{{ post.content.longitude.value }}');
+                    var map = L.map('map_{{ post.id }}').setView([latitude, longitude], 13);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors'
+                    }).addTo(map);
+                    L.marker([latitude, longitude]).addTo(map)
+                        .bindPopup('<b>{{ post.content.title.value }}</b>').openPopup();
+                });
+            </script>
+        {% endif %}
+        <hr>
+    </li>
+    {% endfor %}
+    
 {% else %}
     <p>No posts found matching your criteria.</p>
 {% endif %}
