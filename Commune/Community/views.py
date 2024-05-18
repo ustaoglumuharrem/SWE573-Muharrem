@@ -23,10 +23,7 @@ from decimal import Decimal
 from django.core.files.storage import default_storage
 from django.db.models import Q
 from .forms import generate_dynamic_search_form
-# from datetime import datetime
-from django.core.files import File
-import requests
-from tempfile import NamedTemporaryFile
+
 
 def add_userprofile(request):
     submitted = False
